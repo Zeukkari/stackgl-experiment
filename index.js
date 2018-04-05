@@ -47,8 +47,7 @@ setInterval(function() {
 }, 2000);
 
 function render() {
-  console.log("easingIndex: ", counter);
-
+  // console.log("easingIndex: ", counter);
   requestAnimationFrame(render);
   gl.clear(gl.COLOR_BUFFER_BIT);
   program.bind();
