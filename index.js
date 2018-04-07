@@ -25,9 +25,9 @@ function init() {
       w: 0.3
     },
     easings: {
-      x: 1,
-      y: 2,
-      z: 3
+      x: 3,
+      y: 4,
+      z: 5
     }
   };
 
