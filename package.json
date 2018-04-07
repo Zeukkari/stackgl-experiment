@@ -13,11 +13,16 @@
   "license": "ISC",
   "dependencies": {
     "budo": "^11.2.0",
+    "dat.gui": "^0.7.1",
     "gl-geometry": "^3.1.1",
     "gl-shader": "^4.2.1",
     "glsl-easings": "^1.0.0",
     "glsl-film-grain": "^1.0.4",
     "glsl-random": "0.0.5",
-    "glslify": "^6.1.1"
+    "glslify": "^6.1.1",
+    "mouse-event": "^1.0.5",
+    "mouse-position": "^2.0.1",
+    "mouse-wheel": "^1.2.0",
+    "three": "^0.91.0"
   }
 }

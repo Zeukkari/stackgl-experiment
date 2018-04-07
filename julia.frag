@@ -1,4 +1,3 @@
-#define SHADER_NAME julia.frag
 precision highp float;
 
 #pragma glslify: ease = require(glsl-easings/bounce-in-out)

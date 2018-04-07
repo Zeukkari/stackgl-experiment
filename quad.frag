@@ -1,4 +1,3 @@
-#define SHADER_NAME quad.frag
 #define PI 3.14159265359
 #define TWO_PI 6.28318530718
 
@@ -166,6 +165,8 @@ void main() {
     vec3 color2 = triangle(st2, vec2(0.5,0.5));
     vec3 color3 = triangle(st3, vec2(0.5,0.5));
     gl_FragColor = vec4(color.r,color2.g,color3.b,1.0);
+
+    // gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 
 
 }
