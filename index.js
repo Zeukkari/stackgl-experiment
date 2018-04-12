@@ -28,6 +28,16 @@ function init() {
       x: 3,
       y: 4,
       z: 5
+    },
+    localPosition: {
+      x: 0.5,
+      y: 2.1,
+      z: 0.3
+    },
+    intervals: {
+      x: 0.01,
+      y: 0.01,
+      z: 0.01
     }
   };
 
@@ -52,7 +62,19 @@ function init() {
     },
     uLocalPosition: {
       type: "3v",
-      value: new THREE.Vector3(0, 0, 0)
+      value: new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      )
+    },
+    uIntervals: {
+      type: "3v",
+      value: new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
+      )
     },
     uResolution: {
       type: "2v",
@@ -64,7 +86,7 @@ function init() {
   var customMaterial = new THREE.ShaderMaterial({
     uniforms: uniforms,
     vertexShader: glslify("./threetest.vert"),
-    fragmentShader: glslify("./orbitTrap.frag")
+    fragmentShader: glslify("./fractal3.frag")
   });
 
   var mesh = new THREE.Mesh(geometry, customMaterial);
@@ -78,6 +100,7 @@ function init() {
 
   // GUI
   var gui = new dat.GUI();
+  var MIN_STEP = 0.001;
   var folder = gui.addFolder("Seed values");
   folder
     .add(state.fractalBounds, "x", -2.0, 2.0)
@@ -159,6 +182,74 @@ function init() {
         state.easings.x,
         state.easings.y,
         state.easings.z
+      );
+    });
+  var folder = gui.addFolder("Position");
+  folder
+    .add(state.localPosition, "x", -4.0, 4.0, MIN_STEP)
+    .name("X")
+    .onChange(function(value) {
+      state.localPosition.x = value;
+      uniforms.uLocalPosition.value = new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      );
+    });
+  folder
+    .add(state.localPosition, "y", -4.0, 4.0, MIN_STEP)
+    .name("Y")
+    .onChange(function(value) {
+      state.localPosition.y = value;
+      uniforms.uLocalPosition.value = new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      );
+    });
+  folder
+    .add(state.localPosition, "z", -4.0, 0.0, MIN_STEP)
+    .name("Z")
+    .onChange(function(value) {
+      state.localPosition.z = value;
+      uniforms.uLocalPosition.value = new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      );
+    });
+  var folder = gui.addFolder("Intervals");
+  folder
+    .add(state.intervals, "x", 0.0, 1.0, MIN_STEP)
+    .name("Interval1")
+    .onChange(function(value) {
+      state.intervals.x = value;
+      uniforms.uIntervals.value = new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
+      );
+    });
+  folder
+    .add(state.intervals, "y", 0.0, 1.0, MIN_STEP)
+    .name("Interval2")
+    .onChange(function(value) {
+      state.intervals.y = value;
+      uniforms.uIntervals.value = new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
+      );
+    });
+  folder
+    .add(state.intervals, "z", 0.0, 1.0, MIN_STEP)
+    .name("Interval3")
+    .onChange(function(value) {
+      state.intervals.z = value;
+      uniforms.uIntervals.value = new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
       );
     });
   // Start
