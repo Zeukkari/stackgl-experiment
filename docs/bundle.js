@@ -29,6 +29,16 @@ function init() {
       x: 3,
       y: 4,
       z: 5
+    },
+    localPosition: {
+      x: 0.5,
+      y: 2.1,
+      z: 0.3
+    },
+    intervals: {
+      x: 0.01,
+      y: 0.01,
+      z: 0.01
     }
   };
 
@@ -53,7 +63,19 @@ function init() {
     },
     uLocalPosition: {
       type: "3v",
-      value: new THREE.Vector3(0, 0, 0)
+      value: new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      )
+    },
+    uIntervals: {
+      type: "3v",
+      value: new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
+      )
     },
     uResolution: {
       type: "2v",
@@ -65,7 +87,7 @@ function init() {
   var customMaterial = new THREE.ShaderMaterial({
     uniforms: uniforms,
     vertexShader: glslify(["#define GLSLIFY 1\nvarying vec2 vUv;\n\nvoid main() {\n  vUv = uv;\n  gl_Position = vec4(position, 1.0);\n}\n"]),
-    fragmentShader: glslify(["#define MAXITER 128\n#define M_PI 3.14159265358979323846\n\nprecision highp float;\n#define GLSLIFY 1\n\n#ifndef PI\n#define PI 3.141592653589793\n#endif\n\nfloat sineInOut(float t) {\n  return -0.5 * (cos(PI * t) - 1.0);\n}\n\n#ifndef PI\n#define PI 3.141592653589793\n#endif\n\nfloat bounceOut(float t) {\n  const float a = 4.0 / 11.0;\n  const float b = 8.0 / 11.0;\n  const float c = 9.0 / 10.0;\n\n  const float ca = 4356.0 / 361.0;\n  const float cb = 35442.0 / 1805.0;\n  const float cc = 16061.0 / 1805.0;\n\n  float t2 = t * t;\n\n  return t < a\n    ? 7.5625 * t2\n    : t < b\n      ? 9.075 * t2 - 9.9 * t + 3.4\n      : t < c\n        ? ca * t2 - cb * t + cc\n        : 10.8 * t * t - 20.52 * t + 10.72;\n}\n\nfloat bounceInOut(float t) {\n  return t < 0.5\n    ? 0.5 * (1.0 - bounceOut(1.0 - t * 2.0))\n    : 0.5 * bounceOut(t * 2.0 - 1.0) + 0.5;\n}\n\nfloat cubicInOut(float t) {\n  return t < 0.5\n    ? 4.0 * t * t * t\n    : 0.5 * pow(2.0 * t - 2.0, 3.0) + 1.0;\n}\n\n#ifndef HALF_PI\n#define HALF_PI 1.5707963267948966\n#endif\n\nfloat elasticInOut(float t) {\n  return t < 0.5\n    ? 0.5 * sin(+13.0 * HALF_PI * 2.0 * t) * pow(2.0, 10.0 * (2.0 * t - 1.0))\n    : 0.5 * sin(-13.0 * HALF_PI * ((2.0 * t - 1.0) + 1.0)) * pow(2.0, -10.0 * (2.0 * t - 1.0)) + 1.0;\n}\n\nfloat exponentialInOut(float t) {\n  return t == 0.0 || t == 1.0\n    ? t\n    : t < 0.5\n      ? +0.5 * pow(2.0, (20.0 * t) - 10.0)\n      : -0.5 * pow(2.0, 10.0 - (t * 20.0)) + 1.0;\n}\n\n#ifndef HALF_PI\n#define HALF_PI 1.5707963267948966\n#endif\n\nfloat sineOut(float t) {\n  return sin(t * HALF_PI);\n}\n\n#ifndef HALF_PI\n#define HALF_PI 1.5707963267948966\n#endif\n\nfloat sineIn(float t) {\n  return sin((t - 1.0) * HALF_PI) + 1.0;\n}\n\nfloat bounceIn(float t) {\n  return 1.0 - bounceOut(1.0 - t);\n}\n\nuniform vec4 uFractalBounds;\nuniform vec2 uResolution;\nuniform float uTime;\nuniform vec3 uEasings;\n\nvec2 cmul(vec2 i1, vec2 i2)\n{\n    return vec2(i1.x*i2.x - i1.y*i2.y, i1.y*i2.x + i1.x*i2.y);\n}\n\nvec3 julia(vec2 z, vec2 c)\n{\n    int i = 0;\n    vec2 zi = z;\n\n    float trap1 = 10e5;\n    float trap2 = 10e5;\n\n    for(int n=0; n < MAXITER; ++n)\n    {\n        if(dot(zi,zi) > 4.0)\n            break;\n        i++;\n        zi = cmul(zi,zi) + c;\n\n        // Orbit trap\n        trap1 = min(trap1, sqrt(zi.x*zi.y));\n        trap2 = min(trap2, sqrt(zi.y*zi.y));\n    }\n\n    return vec3(i,trap1,trap2);\n}\n\nvec4 gen_color(vec3 iter)\n{\n    float t1 = 1.0+log(iter.y)/8.0;\n    float t2 = 1.0+log(iter.z)/16.0;\n    float t3 = t1/t2;\n\n    //vec3 comp = vec3(t1,t1,t1);\n    vec3 red = vec3(0.9,0.2,0.1);\n    vec3 black = vec3(1.0,1.0,1.0);\n    vec3 blue = vec3(0.1,0.2,0.9);\n    vec3 comp = mix(blue,black,vec3(t2));\n    comp = mix(red,comp,vec3(t1));\n    return vec4(comp, 1.0);\n}\n\nfloat getEasing(int easer) {\n  if(easer == 0) {\n    return sineInOut(sin(uTime * 0.3));\n  } else if(easer == 1) {\n    return bounceInOut(sin(uTime * 0.3));\n  } else if(easer == 2) {\n    return cubicInOut(sin(uTime * 0.3));\n  } else if(easer == 3) {\n    return elasticInOut(sin(uTime * 0.3));\n  } else if(easer == 4) {\n    return exponentialInOut(sin(uTime * 0.3));\n  } else if(easer == 5) {\n    return sineOut(sin(uTime * 0.3));\n  } else if(easer == 6) {\n    return sineIn(sin(uTime * 0.3));\n  }\n  return bounceIn(sin(uTime * 0.3));\n}\n\nvoid main() {\n\n  vec2 myZ = 2.*(2.*gl_FragCoord.xy - uResolution) / uResolution.x;\n  float easing = getEasing(int(uEasings.x));\n  float easing2 = getEasing(int(uEasings.y));\n  float easing3 = getEasing(int(uEasings.z));\n  vec2 myC = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing));\n  vec2 myC2 = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing2), mix(uFractalBounds.z, uFractalBounds.w,easing2));\n  vec2 myC3 = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing3), mix(uFractalBounds.z, uFractalBounds.w,easing3));\n  vec3 iter = julia(myZ, myC);\n  vec3 iter2 = julia(myZ, myC2);\n  vec3 iter3 = julia(myZ, myC3);\n  vec4 color = gen_color(iter);\n  vec4 color2 = gen_color(iter2);\n  vec4 color3 = gen_color(iter3);\n  gl_FragColor = vec4(1.-(color.rgb + color2.rgb + color3.rgb) * 0.25, 1.0);\n}"])
+    fragmentShader: glslify(["#define MAXITER 128\n#define M_PI 3.14159265358979323846\n#define MIN_PACE 0.00000000000000001\n\nprecision highp float;\n#define GLSLIFY 1\n\n#ifndef PI\n#define PI 3.141592653589793\n#endif\n\nfloat sineInOut(float t) {\n  return -0.5 * (cos(PI * t) - 1.0);\n}\n\n#ifndef PI\n#define PI 3.141592653589793\n#endif\n\nfloat bounceOut(float t) {\n  const float a = 4.0 / 11.0;\n  const float b = 8.0 / 11.0;\n  const float c = 9.0 / 10.0;\n\n  const float ca = 4356.0 / 361.0;\n  const float cb = 35442.0 / 1805.0;\n  const float cc = 16061.0 / 1805.0;\n\n  float t2 = t * t;\n\n  return t < a\n    ? 7.5625 * t2\n    : t < b\n      ? 9.075 * t2 - 9.9 * t + 3.4\n      : t < c\n        ? ca * t2 - cb * t + cc\n        : 10.8 * t * t - 20.52 * t + 10.72;\n}\n\nfloat bounceInOut(float t) {\n  return t < 0.5\n    ? 0.5 * (1.0 - bounceOut(1.0 - t * 2.0))\n    : 0.5 * bounceOut(t * 2.0 - 1.0) + 0.5;\n}\n\nfloat cubicInOut(float t) {\n  return t < 0.5\n    ? 4.0 * t * t * t\n    : 0.5 * pow(2.0 * t - 2.0, 3.0) + 1.0;\n}\n\n#ifndef HALF_PI\n#define HALF_PI 1.5707963267948966\n#endif\n\nfloat elasticInOut(float t) {\n  return t < 0.5\n    ? 0.5 * sin(+13.0 * HALF_PI * 2.0 * t) * pow(2.0, 10.0 * (2.0 * t - 1.0))\n    : 0.5 * sin(-13.0 * HALF_PI * ((2.0 * t - 1.0) + 1.0)) * pow(2.0, -10.0 * (2.0 * t - 1.0)) + 1.0;\n}\n\nfloat exponentialInOut(float t) {\n  return t == 0.0 || t == 1.0\n    ? t\n    : t < 0.5\n      ? +0.5 * pow(2.0, (20.0 * t) - 10.0)\n      : -0.5 * pow(2.0, 10.0 - (t * 20.0)) + 1.0;\n}\n\n#ifndef HALF_PI\n#define HALF_PI 1.5707963267948966\n#endif\n\nfloat sineOut(float t) {\n  return sin(t * HALF_PI);\n}\n\n#ifndef HALF_PI\n#define HALF_PI 1.5707963267948966\n#endif\n\nfloat sineIn(float t) {\n  return sin((t - 1.0) * HALF_PI) + 1.0;\n}\n\nfloat bounceIn(float t) {\n  return 1.0 - bounceOut(1.0 - t);\n}\n\nvec3 blendOverlay(vec3 base, vec3 blend) {\n    return mix(1.0 - 2.0 * (1.0 - base) * (1.0 - blend), 2.0 * base * blend, step(base, vec3(0.5)));\n    // with conditionals, may be worth benchmarking\n    // return vec3(\n    //     base.r < 0.5 ? (2.0 * base.r * blend.r) : (1.0 - 2.0 * (1.0 - base.r) * (1.0 - blend.r)),\n    //     base.g < 0.5 ? (2.0 * base.g * blend.g) : (1.0 - 2.0 * (1.0 - base.g) * (1.0 - blend.g)),\n    //     base.b < 0.5 ? (2.0 * base.b * blend.b) : (1.0 - 2.0 * (1.0 - base.b) * (1.0 - blend.b))\n    // );\n}\n\nuniform vec4 uFractalBounds;\nuniform vec2 uResolution;\nuniform float uTime;\nuniform vec3 uEasings;\nuniform vec3 uLocalPosition;\nuniform vec3 uIntervals;\n\nvec3 rgb2hsv(vec3 c)\n{\n    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);\n    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));\n    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));\n\n    float d = q.x - min(q.w, q.y);\n    float e = 1.0e-10;\n    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);\n}\n\nvec3 hsv2rgb(vec3 c)\n{\n    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);\n    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);\n    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);\n}\n\nvec2 cmul(vec2 i1, vec2 i2)\n{\n    return vec2(i1.x*i2.x - i1.y*i2.y, i1.y*i2.x + i1.x*i2.y);\n}\n\nvec3 julia(vec2 z, vec2 c)\n{\n    int i = 0;\n    vec2 zi = z + vec2(uLocalPosition.x, uLocalPosition.y);\n    zi = zi * uLocalPosition.z;\n\n    float trap1 = 10e8;\n    float trap2 = 10e8;\n\n    for(int n=0; n < MAXITER; ++n)\n    {\n        if(dot(zi,zi) > 4.0)\n            break;\n        i++;\n        zi = cmul(zi,zi) + c;\n\n        // Orbit trap\n        trap1 = min(trap1, sqrt(zi.x*zi.x));\n        trap2 = min(trap2, 0.0001+sqrt(zi.y*zi.y));\n    }\n\n    return vec3(i,trap1,trap2);\n}\n\nvec4 gen_color(vec3 iter)\n{\n    float t1 = 1.0+log(iter.y)/8.0;\n    float t2 = 1.0+log(iter.z)/16.0;\n    float t3 = t1/t2;\n\n    //vec3 comp = vec3(t1,t1,t1);\n    vec3 red = vec3(0.9,0.2,0.1);\n    vec3 black = vec3(1.0,1.0,1.0);\n    vec3 blue = vec3(0.1,0.2,0.9);\n    vec3 comp = mix(blue,black,vec3(t2));\n    comp = mix(red,comp,vec3(t1));\n    return vec4(comp, 1.0);\n}\n\nfloat getEasing(int easer, float pace) {\n  pace += MIN_PACE;\n  if(easer == 0) {\n    return sineInOut(sin(uTime * pace));\n  } else if(easer == 1) {\n    return bounceInOut(sin(uTime * pace));\n  } else if(easer == 2) {\n    return cubicInOut(sin(uTime * pace));\n  } else if(easer == 3) {\n    return elasticInOut(sin(uTime * pace));\n  } else if(easer == 4) {\n    return exponentialInOut(sin(uTime * pace));\n  } else if(easer == 5) {\n    return sineOut(sin(uTime * pace));\n  } else if(easer == 6) {\n    return sineIn(sin(uTime * pace));\n  }\n  return bounceIn(sin(uTime * pace));\n}\n\nvoid main() {\n  vec2 uv = gl_FragCoord.xy/uResolution;\n  float fromCenter = distance(uv, vec2(uLocalPosition.x, uLocalPosition.y));\n  vec2 myZ = 2.*(2.*gl_FragCoord.xy - uResolution) / uResolution.x; // + vec2(uLocalPosition.x, uLocalPosition.y);\n  float easing = getEasing(int(uEasings.x), uIntervals.x);\n  float easing2 = getEasing(int(uEasings.y), uIntervals.y);\n  float easing3 = getEasing(int(uEasings.z), uIntervals.z);\n  vec2 myC = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing));\n  vec2 myC2 = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing2));\n  vec2 myC3 = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing3));\n  vec3 iter = julia(myZ, myC);\n  vec3 iter2 = julia(myZ, myC2);\n  iter2 = julia(vec2(iter2.x,iter2.y), vec2(iter2.z, 1.0));\n  vec3 iter3 = julia(myZ, myC3);\n  vec4 color = gen_color(iter);\n  vec4 color2 = gen_color(iter2);\n  vec4 color3 = gen_color(iter3);\n  //vec4 newColor = vec4(fromCenter/color - fromCenter/color2 + sin(uTime)*fromCenter/color);\n  //gl_FragColor = mix(color, newColor, 0.95);\n  // gl_FragColor = color;\n  // gl_FragColor = vec4(1.-(color.rgb + color2.rgb + color3.rgb) * 0.35, 1.0);\n\n  vec3 newColor = normalize(vec3(1.1-blendOverlay(color.rgb,color3.rgb)));\n  vec3 hsvColor = rgb2hsv(newColor);\n  hsvColor.x = hsvColor.x * easing2;\n  hsvColor.y = hsvColor.y + 1.0;\n  hsvColor.z = hsvColor.z - fromCenter;\n  newColor = hsv2rgb(hsvColor);\n  gl_FragColor = vec4(vec3(newColor.r, newColor.g, newColor.b), 0.0);\n}"])
   });
 
   var mesh = new THREE.Mesh(geometry, customMaterial);
@@ -79,6 +101,7 @@ function init() {
 
   // GUI
   var gui = new dat.GUI();
+  var MIN_STEP = 0.001;
   var folder = gui.addFolder("Seed values");
   folder
     .add(state.fractalBounds, "x", -2.0, 2.0)
@@ -160,6 +183,74 @@ function init() {
         state.easings.x,
         state.easings.y,
         state.easings.z
+      );
+    });
+  var folder = gui.addFolder("Position");
+  folder
+    .add(state.localPosition, "x", -4.0, 4.0, MIN_STEP)
+    .name("X")
+    .onChange(function(value) {
+      state.localPosition.x = value;
+      uniforms.uLocalPosition.value = new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      );
+    });
+  folder
+    .add(state.localPosition, "y", -4.0, 4.0, MIN_STEP)
+    .name("Y")
+    .onChange(function(value) {
+      state.localPosition.y = value;
+      uniforms.uLocalPosition.value = new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      );
+    });
+  folder
+    .add(state.localPosition, "z", -4.0, 0.0, MIN_STEP)
+    .name("Z")
+    .onChange(function(value) {
+      state.localPosition.z = value;
+      uniforms.uLocalPosition.value = new THREE.Vector3(
+        state.localPosition.x,
+        state.localPosition.y,
+        state.localPosition.z
+      );
+    });
+  var folder = gui.addFolder("Intervals");
+  folder
+    .add(state.intervals, "x", 0.0, 1.0, MIN_STEP)
+    .name("Interval1")
+    .onChange(function(value) {
+      state.intervals.x = value;
+      uniforms.uIntervals.value = new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
+      );
+    });
+  folder
+    .add(state.intervals, "y", 0.0, 1.0, MIN_STEP)
+    .name("Interval2")
+    .onChange(function(value) {
+      state.intervals.y = value;
+      uniforms.uIntervals.value = new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
+      );
+    });
+  folder
+    .add(state.intervals, "z", 0.0, 1.0, MIN_STEP)
+    .name("Interval3")
+    .onChange(function(value) {
+      state.intervals.z = value;
+      uniforms.uIntervals.value = new THREE.Vector3(
+        state.intervals.x,
+        state.intervals.y,
+        state.intervals.z
       );
     });
   // Start
