@@ -35,9 +35,9 @@ function init() {
       z: 0.3
     },
     intervals: {
-      x: 0.01,
-      y: 0.01,
-      z: 0.01
+      x: 0.225,
+      y: 0.732,
+      z: 0.997
     }
   };
 
@@ -86,7 +86,7 @@ function init() {
   var customMaterial = new THREE.ShaderMaterial({
     uniforms: uniforms,
     vertexShader: glslify("./threetest.vert"),
-    fragmentShader: glslify("./fractal3.frag")
+    fragmentShader: glslify("./generatorsRedux.frag")
   });
 
   var mesh = new THREE.Mesh(geometry, customMaterial);
