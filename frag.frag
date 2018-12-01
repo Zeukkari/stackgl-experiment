@@ -12,8 +12,8 @@ precision highp float;
 #pragma glslify: ease6 = require(glsl-easings/sine-out)
 #pragma glslify: ease7 = require(glsl-easings/sine-in)
 #pragma glslify: ease8 = require(glsl-easings/bounce-in)
-
 #pragma glslify: blend = require(glsl-blend-overlay)
+
 
 uniform vec4 uFractalBounds;
 uniform vec2 uResolution;
@@ -21,6 +21,10 @@ uniform float uTime;
 uniform vec3 uEasings;
 uniform vec3 uLocalPosition;
 uniform vec3 uIntervals;
+
+varying lowp vec4 newPos;
+
+varying vec4 colorV;
 
 vec3 rgb2hsv(vec3 c)
 {
@@ -45,6 +49,7 @@ vec2 cmul(vec2 i1, vec2 i2)
     return vec2(i1.x*i2.x - i1.y*i2.y, i1.y*i2.x + i1.x*i2.y);
 }
 
+
 vec3 julia(vec2 z, vec2 c)
 {
     int i = 0;
@@ -68,6 +73,7 @@ vec3 julia(vec2 z, vec2 c)
 
     return vec3(i,trap1,trap2);
 }
+
 
 vec4 gen_color(vec3 iter)
 {
@@ -108,25 +114,37 @@ void main() {
   vec2 uv = gl_FragCoord.xy/uResolution*0.5;
   float fromCenter = distance(uv, vec2(uLocalPosition.x, uLocalPosition.y));
   vec2 myZ = 2.*(2.*gl_FragCoord.xy - uResolution) / uResolution.x;
-  float easing = getEasing(int(uEasings.x), uIntervals.x);
-  float easing2 = getEasing(int(uEasings.y), uIntervals.y);
-  float easing3 = getEasing(int(uEasings.z), uIntervals.z);
+  float easing = getEasing(int(uEasings.y), uIntervals.x * 3.);
   vec2 myC = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing));
-  vec2 myC2 = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing2));
-  vec2 myC3 = vec2(mix(uFractalBounds.x, uFractalBounds.z,easing), mix(uFractalBounds.z, uFractalBounds.w,easing3));
+  vec2 myC2 = vec2(mix(uFractalBounds.x, uFractalBounds.y,easing), mix(uFractalBounds.z, uFractalBounds.w,easing));
   vec3 iter = julia(myZ, myC);
   vec3 iter2 = julia(myZ, myC2);
-  iter2 = julia(vec2(iter2.x,iter2.y), vec2(iter2.z, 1.0));
-  vec3 iter3 = julia(myZ, myC3);
   vec4 color = gen_color(iter);
   vec4 color2 = gen_color(iter2);
-  vec4 color3 = gen_color(iter3);
-
-  vec3 newColor = normalize(vec3(1.1-blend(color3.rgb,color2.rgb)));
+  vec3 newColor = normalize(vec3(1.1-blend(color.rgb,color2.rgb)));
   vec3 hsvColor = rgb2hsv(newColor);
-  hsvColor.x = hsvColor.x * easing2;
+  hsvColor.x = hsvColor.x * easing;
   hsvColor.y = hsvColor.y + 1.0;
   hsvColor.z = hsvColor.z - fromCenter;
   newColor = hsv2rgb(hsvColor);
-  gl_FragColor = vec4(vec3(newColor.r, newColor.g, newColor.b), 1.0);
+
+  vec3 newColor2 = rgb2hsv(color2.rgb);
+
+
+
+  // gl_FragColor = vec4(mix(hsvColor, newColor, easing), 0.);
+
+  // gl_FragColor = vec4(newColor.r, newColor.g, newColor.b, 1.0);
+  //gl_FragColor = vec4(color2.r, color2.g, color2.b, 1.0);
+  gl_FragColor = vec4(vec3(newColor.r, sin(uTime), newColor.b), sin(uTime*5.)) + vec4(mix(hsvColor, newColor, 1.-easing), 0.);
+  // gl_FragColor = texture2D(u_texture, v_texcoord);
+
+  //gl_FragColor = vec4(v_texcoord.x, v_texcoord.y, 1.0, 1.0);
+  // gl_FragColor = vec4(newPos.x, color.g, color.b, 1.0);
+  //if(length(newColor.xyz) > 0.9) {
+  //  gl_FragColor = vec4(newColor.r, 0., , 1.);
+  //}
+  //gl_FragColor = vec4(newColor, 1.);
+
+    // gl_FragColor = vec4(newColor, 1.);
 }
