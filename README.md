@@ -1,6 +1,5 @@
-# stackgl-experiment
+# WebGL fractal
 
-(https://zeukkari.github.io/stackgl-experiment/)[https://zeukkari.github.io/stackgl-experiment/]
+(stackgl-experiment)[https://zeukkari.github.io/stackgl-experiment/]
 
-WebGL fractal
 
